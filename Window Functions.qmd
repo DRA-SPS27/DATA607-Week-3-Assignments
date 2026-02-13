@@ -1,0 +1,18 @@
+---
+title: "Assignment 3B - Window Functions"
+author: "Denise Atherley"
+format: html
+editor: visual
+---
+
+## Approach
+
+### Time Series Dataset - Monthly Housing
+
+I was looking for a dataset that includes a time series for two or more separate items. I used ChatGPT to help me find a dataset that was compelling. I was able to find one on the Mathematics Texas at Tech University website that offered a list of the monthly housing price index (hpi) and the number of existing homes sold (numsold, in thousands) in the USA from January 1991 to April 2013. I will then calculate the yearly average and the six day moving averages for a subset of the items.
+
+Source: <https://www.math.ttu.edu/~atrindad/tsdata/index.html?utm_source=chatgpt.com>
+
+OpenAI. (2025). ChatGPT (Version 5.2) [Large language model].
+https://chat.openai.com. Accessed February 12, 2026
+
