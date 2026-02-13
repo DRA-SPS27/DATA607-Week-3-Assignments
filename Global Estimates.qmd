@@ -1,0 +1,38 @@
+---
+title: "Assignment 3A - Global Estimates"
+author: "Denise Atherley"
+format: html
+editor: visual
+---
+
+## Approach
+
+I will be utilizing an R script in tidyverse syntax to:
+
+1.  Read the survey data from a .csv file of the movie ratings I collected during assignment #2.
+
+2.  Reshape it in long format
+
+3.  Compute the Global Baseline Estimate
+
+4.  Predict the missing ratings
+
+5.  Produce a move recommendation for each user
+
+### Global Baseline Estimate Formula
+
+The formula for the Global Baseline Estimate is as follows:
+
+r\^ui​=μ+bu​+bi​
+
+Where:
+
+-   μ = global mean rating
+
+-   bu = rˉu​−μ (user bias)
+
+-   bi = rˉi​−μ (movie bias)
+
+### Desired Outcome
+
+Once I've completed my code deliverable, I hope to produce predicted ratings for the movies that each person hadn't rated, select the movie with the highest predicted rating and return a clean recommendation table grouped by user.
