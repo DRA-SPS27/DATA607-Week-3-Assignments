@@ -11,28 +11,166 @@ I will be utilizing an R script in tidyverse syntax to:
 
 1.  Read the survey data from a .csv file of the movie ratings I collected during assignment #2.
 
-2.  Reshape it in long format
+2.  Remove missing ratings for model training
 
 3.  Compute the Global Baseline Estimate
 
 4.  Predict the missing ratings
 
-5.  Produce a move recommendation for each user
+5.  Produce a movie recommendation for a user
 
 ### Global Baseline Estimate Formula
 
 The formula for the Global Baseline Estimate is as follows:
 
-r\^ui​=μ+bu​+bi​
+r\^~ui​~=μ+b~u~​+b~i​~
 
 Where:
 
 -   μ = global mean rating
 
--   bu = rˉu​−μ (user bias)
+-   b~u~ = rˉ~u​~−μ (user bias)
 
--   bi = rˉi​−μ (movie bias)
+-   b~i~ = rˉ~i​~−μ (movie bias)
 
 ### Desired Outcome
 
-Once I've completed my code deliverable, I hope to produce predicted ratings for the movies that each person hadn't rated, select the movie with the highest predicted rating and return a clean recommendation table grouped by user.
+Once I've completed my code deliverable, I hope to produce predicted ratings for the movies that each person hadn't rated, select the movie with the highest predicted rating and return a recommendation table.
+
+## Code Deliverable
+
+I will first load the tidyverse package and then read the data from the .csv file of the movie ratings I captured.
+
+```{r}
+library(tidyverse)
+
+```
+
+```{r}
+library(gt)
+
+```
+
+*Note: I am using the raw data from my uploaded file in my github repository.*
+
+```{r}
+url <- "https://raw.githubusercontent.com/DRA-SPS27/DATA607-Week-3-Assignments/refs/heads/main/D.Atherley%20-%20Movie%20Ratings%20(IDs).csv"
+
+df <- read_csv(url)
+
+glimpse (df)
+
+
+```
+
+```{r}
+#| echo: true
+df |>
+  gt()
+```
+
+I will now remove missing ratings for model training
+
+```{r}
+ratings_train <- df %>%
+  filter (!is.na(Rating))
+
+```
+
+### Computing the Global Mean
+
+```{r}
+#| echo: true
+mu <- mean(ratings_train$Rating)
+
+mu
+```
+
+### Comuting movie Bias (b~i~)
+
+I will use regularization to compute the movie bias value. The code below will generate a new table labeled movie_bias that has a column for Movie_ID and a column for the computed bi value.
+
+```{r}
+#| echo: true
+lambda <- 5  # regularization parameter
+
+movie_bias <- ratings_train %>%
+  group_by(Movie_ID) %>%
+  summarise(
+    b_i = sum(Rating - mu) / (n() + lambda),
+    .groups = "drop"
+  )
+
+```
+
+### Computing user bias (b~u~)
+
+The code below will generate a new table labled user_bias that has a column for User_ID and a column for the computed bu value.
+
+```{r}
+user_bias <- ratings_train %>%
+  left_join(movie_bias, by = "Movie_ID") %>%
+  group_by(User_ID) %>%
+  summarise(
+    b_u = sum(Rating - mu - b_i) / (n() + lambda),
+    .groups = "drop"
+  )
+
+```
+
+### Prediction Function
+
+I will now compute the predicted ratings for ALL user-movie combinations. The code below will generate a new table labeled predictions that combines the original dataset with the computed movie bias and user bias and then calculate the predicted rating that adding the global estimate value, the move bias and the user bias together.
+
+```{r}
+predictions <- df %>%
+  left_join(movie_bias, by = "Movie_ID") %>%
+  left_join(user_bias, by = "User_ID") %>%
+  mutate(
+    b_i = replace_na(b_i, 0),
+    b_u = replace_na(b_u, 0),
+    Predicted_Rating = mu + b_i + b_u
+  )
+
+```
+
+```{r}
+predictions |>
+  gt()
+```
+
+### Recommendations
+
+With the code below I will answer the question of how would User #6 rate the movies that they hadn't rated. This displays a predicted rating based on the prediction function created.
+
+```{r}
+#| echo: true
+recommendations_user6 <- predictions %>%
+  filter(User_ID == 6, is.na(Rating)) %>%
+  arrange(desc(Predicted_Rating)) %>%
+  slice_head(n = 3)
+
+recommendations_user6
+
+```
+
+Below is a table for the top 3 recommended movies for all users who hadn't seen the movie with their predicted rating.
+
+```{r}
+top_n <- 3
+
+recommendation_table <- predictions %>%
+  filter(is.na(Rating)) %>%                     # only unseen movies
+  group_by(User_ID) %>%
+  arrange(desc(Predicted_Rating), .by_group = TRUE) %>%
+  slice_head(n = top_n) %>%
+  mutate(
+    Rank = row_number(),
+    Predicted_Rating = round(Predicted_Rating, 2)
+  ) %>%
+  select(User_ID, Rank, Movie_ID, Predicted_Rating) %>%
+  ungroup()
+
+recommendation_table
+
+```
